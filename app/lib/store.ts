@@ -27,7 +27,7 @@ const seed: Activation[] = [
     total: 86.7,
     cashback: 4.34,
     points: 87,
-    date: new Date(Date.now() - 86400000 * 5).toISOString(),
+    date: "2024-01-01T12:00:00.000Z",
   },
 ];
 
@@ -41,22 +41,30 @@ export function simulateActivation(code: string): Activation {
     { name: "Gin tônica", price: 32 },
     { name: "Couvert artístico", price: 15 },
   ];
-  const n = 2 + Math.floor(Math.random() * 3);
+  const base = Array.from(code.toUpperCase()).reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+  const n = 2 + (base % 3);
   const items = [...menu]
-    .sort(() => Math.random() - 0.5)
+    .map((m, index) => ({ ...m, order: (base + index * 17) % 997 }))
+    .sort((a, b) => a.order - b.order)
     .slice(0, n)
-    .map((m) => ({ ...m, qty: 1 + Math.floor(Math.random() * 3) }));
+    .map((m, index) => ({ ...m, qty: 1 + ((base + index * 13) % 3) }));
   const total = +items.reduce((s, i) => s + i.qty * i.price, 0).toFixed(2);
+  const normalizedCode = code.toUpperCase();
+  const generatedId = `act-${Array.from(normalizedCode)
+    .reduce((sum, ch) => sum + ch.charCodeAt(0), 0)
+    .toString(16)
+    .padStart(8, "0")}`;
+
   return {
-    id: crypto.randomUUID(),
-    code: code.toUpperCase(),
+    id: generatedId,
+    code: normalizedCode,
     establishment: "Coronel Bar",
     category: "Casa boêmia",
-    items,
+    items: items.map(({ order, ...item }) => item),
     total,
     cashback: +(total * 0.05).toFixed(2),
     points: Math.round(total),
-    date: new Date().toISOString(),
+    date: new Date(Date.UTC(2024, 0, 1 + (base % 28), 12, 0, 0)).toISOString(),
   };
 }
 
